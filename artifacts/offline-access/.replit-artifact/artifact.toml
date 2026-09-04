@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "GatePass Offline"
+description = "An offline-first visitor access app where residents issue signed guest and delivery passes, and gate consoles validate them locally with a QR-ready workflow and sync activity when online."
+version = "1.0.0"
+id = "artifacts/offline-access"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 26060
+
+[services.development]
+run = "pnpm --filter @workspace/offline-access run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/offline-access", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/offline-access/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "26060"
+BASE_PATH = "/"

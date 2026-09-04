@@ -1,0 +1,1 @@
+- [OpenAPI and Zod compatibility](openapi-zod-compat.md) — use plain numeric schemas when generated integer validators are incompatible with the workspace Zod version.
