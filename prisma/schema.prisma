@@ -1,0 +1,316 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  societyId     String?
+  unitId        String?
+  name          String
+  email         String    @unique
+  phone         String
+  password      String
+  role          String
+  status        String    @default("active")
+  emailVerified Boolean   @default(false)
+  phoneVerified Boolean   @default(false)
+  gateId        String?
+  photo         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  society       Society?  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  unit          Unit?     @relation(fields: [unitId], references: [id], onDelete: SetNull)
+
+  @@index([societyId])
+  @@index([role])
+  @@index([email])
+  @@index([phone])
+}
+
+model Society {
+  id        String   @id @default(cuid())
+  name      String
+  address   String
+  city      String
+  state     String?
+  latitude  Float?
+  longitude Float?
+  code      String   @unique
+  photo     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users         User[]
+  units         Unit[]
+  helpers       Helper[]
+  visitors      Visitor[]
+  parcels       Parcel[]
+  tickets       Ticket[]
+  gates         Gate[]
+  notices       Notice[]
+  staffCheckIns StaffCheckIn[]
+  workOrders    WorkOrder[]
+  societyNotes  SocietyNote[]
+  familyMembers FamilyMember[]
+  notifications AppNotification[]
+}
+
+model Unit {
+  id        String   @id @default(cuid())
+  societyId String
+  block     String
+  number    String
+  floor     Int      @default(1)
+  createdAt DateTime @default(now())
+
+  society   Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  users     User[]
+
+  @@unique([societyId, block, number])
+  @@index([societyId])
+}
+
+model Helper {
+  id        String   @id @default(cuid())
+  societyId String
+  unitId    String
+  name      String
+  phone     String
+  photo     String?
+  duty      String
+  allowed   Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  society   Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  @@index([societyId])
+}
+
+model Visitor {
+  id                 String   @id @default(cuid())
+  societyId          String
+  unitId             String
+  hostUserId         String
+  name               String
+  phone              String
+  purpose            String
+  status             String
+  code               String
+  createdBy          String
+  note               String   @default("")
+  photo              String?
+  helperId           String?
+  vehicleNumber      String?
+  validDurationHours Int?     @default(12)
+  isSurpriseDelivery Boolean? @default(false)
+  category           String?
+  createdAt          DateTime @default(now())
+
+  society            Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  @@index([societyId])
+  @@index([code])
+}
+
+model Parcel {
+  id             String   @id @default(cuid())
+  societyId      String
+  unitId         String
+  residentUserId String
+  carrier        String
+  description    String
+  status         String
+  otp            String
+  createdAt      DateTime @default(now())
+
+  society        Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  @@index([societyId])
+}
+
+model Ticket {
+  id             String   @id @default(cuid())
+  societyId      String
+  raisedByUserId String
+  subject        String
+  body           String
+  category       String
+  priority       String
+  status         String
+  createdAt      DateTime @default(now())
+
+  society        Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  @@index([societyId])
+}
+
+model Gate {
+  id                      String   @id @default(cuid())
+  societyId               String
+  name                    String
+  visitorApprovalRequired Boolean  @default(true)
+  deliveryAutoApprove     Boolean  @default(true)
+  createdAt               DateTime @default(now())
+
+  society                 Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  @@index([societyId])
+}
+
+model Notice {
+  id        String   @id @default(cuid())
+  societyId String
+  title     String
+  body      String
+  priority  String?  @default("normal")
+  category  String?
+  createdAt DateTime @default(now())
+
+  society   Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  @@index([societyId])
+}
+
+model StaffCheckIn {
+  id          String   @id @default(cuid())
+  societyId   String
+  gateId      String
+  name        String
+  duty        String
+  photo       String?
+  checkedInAt DateTime @default(now())
+
+  society     Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  @@index([societyId])
+}
+
+model WorkOrder {
+  id          String   @id @default(cuid())
+  societyId   String
+  code        String
+  vendor      String
+  category    String
+  description String
+  status      String
+  sentDate    String
+  createdAt   DateTime @default(now())
+
+  society     Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  @@index([societyId])
+}
+
+model SocietyNote {
+  id        String   @id @default(cuid())
+  societyId String
+  title     String
+  content   String
+  date      String
+  createdAt DateTime @default(now())
+
+  society   Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  @@index([societyId])
+}
+
+model FamilyMember {
+  id                String   @id @default(cuid())
+  societyId         String
+  unitId            String
+  primaryResidentId String
+  name              String
+  relation          String
+  phone             String
+  photo             String?
+  addedAt           DateTime @default(now())
+
+  society           Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  @@index([societyId])
+}
+
+model AppNotification {
+  id        String   @id @default(cuid())
+  userId    String?
+  societyId String
+  title     String
+  message   String
+  type      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  society   Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  @@index([societyId])
+  @@index([userId])
+}
+
+model Plan {
+  id           String   @id @default(cuid())
+  name         String
+  monthlyPrice Int
+  maxUnits     Int
+  maxGates     Int
+  features     String[]
+  createdAt    DateTime @default(now())
+}
+
+model Subscription {
+  id        String   @id @default(cuid())
+  societyId String
+  planId    String
+  status    String
+  renewsOn  String
+  createdAt DateTime @default(now())
+
+  @@index([societyId])
+}
+
+model Purchase {
+  id          String   @id @default(cuid())
+  societyId   String
+  planId      String
+  amount      Int
+  status      String
+  buyerName   String
+  buyerEmail  String
+  paymentId   String?
+  purchasedAt DateTime @default(now())
+
+  @@index([societyId])
+}
+
+model DemoRequest {
+  id          String   @id @default(cuid())
+  name        String
+  phone       String
+  email       String
+  societyName String
+  city        String
+  message     String
+  status      String   @default("new")
+  createdAt   DateTime @default(now())
+}
+
+model OtpRecord {
+  id                  String   @id @default(cuid())
+  identifier          String
+  type                String
+  purpose             String
+  otpHash             String
+  expiresAt           BigInt
+  attempts            Int      @default(0)
+  maxAttempts         Int      @default(5)
+  resendCooldownUntil BigInt
+  verified            Boolean  @default(false)
+  createdAt           DateTime @default(now())
+
+  @@index([identifier, type, purpose])
+}
