@@ -1,6 +1,12 @@
 import { Router } from "express";
 import { prisma } from "../db";
 import { type AuthenticatedRequest, requireAuth } from "../lib/auth";
+import {
+  notifyVisitorRequest,
+  notifyVisitorStatus,
+  notifyParcelArrival,
+  notifyNoticePublished,
+} from "../lib/socket";
 import type { Database } from "../../../src/types";
 
 export const dataRouter = Router();
@@ -289,6 +295,13 @@ dataRouter.post("/sync", async (req, res) => {
             photo: v.photo,
           },
         });
+
+        // Real-time WebSocket emission
+        if (v.status === "pending") {
+          notifyVisitorRequest(v.societyId, v.unitId, v);
+        } else {
+          notifyVisitorStatus(v.societyId, v);
+        }
       }
     }
 
@@ -311,6 +324,9 @@ dataRouter.post("/sync", async (req, res) => {
             status: p.status,
           },
         });
+
+        // Real-time WebSocket emission for parcel
+        notifyParcelArrival(p.societyId, p.unitId, p);
       }
     }
 
@@ -497,3 +513,23 @@ dataRouter.delete("/residents/:id/reject", async (req, res) => {
     res.status(500).json({ error: "Failed to reject resident." });
   }
 });
+
+// -------------------------------------------------------------
+// Real-Time Visitor Status Endpoint: PUT /api/visitors/:id/status
+// -------------------------------------------------------------
+dataRouter.put("/visitors/:id/status", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const updated = await prisma.visitor.update({
+      where: { id },
+      data: { status },
+    });
+    notifyVisitorStatus(updated.societyId, updated as any);
+    res.json({ success: true, visitor: updated });
+  } catch (error: any) {
+    console.error("Visitor status error:", error);
+    res.status(500).json({ error: "Failed to update visitor status." });
+  }
+});
+

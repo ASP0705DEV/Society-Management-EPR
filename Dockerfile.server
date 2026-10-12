@@ -1,0 +1,40 @@
+# ==========================================================
+# AI Smartgate Estate OS - Backend Service Dockerfile
+# Multi-stage production container with Node.js 22 & Prisma
+# ==========================================================
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+
+RUN apk add --no-cache openssl libc6-compat
+
+COPY package*.json ./
+COPY prisma ./prisma/
+
+RUN npm ci
+
+COPY . .
+
+RUN npx prisma generate
+
+# ==========================================================
+# Production Runtime Stage
+# ==========================================================
+FROM node:22-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=8080
+
+RUN apk add --no-cache openssl libc6-compat
+
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/server ./server
+COPY --from=builder /app/src ./src
+
+EXPOSE 8080
+
+CMD ["npx", "tsx", "server/src/index.ts"]

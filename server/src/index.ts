@@ -54,6 +54,11 @@ if (process.env.NODE_ENV !== "test") {
   });
 }
 
+import { metricsMiddleware, getPrometheusMetrics } from "./lib/metrics";
+
+// Request & performance metrics collection
+app.use(metricsMiddleware);
+
 // Health check endpoint
 app.get("/api/health", (_req, res) => {
   res.json({
@@ -62,6 +67,17 @@ app.get("/api/health", (_req, res) => {
     version: "1.0.0",
     timestamp: new Date().toISOString(),
   });
+});
+
+// Prometheus & Grafana monitoring metrics endpoint
+app.get("/api/metrics", async (_req, res) => {
+  try {
+    const metrics = await getPrometheusMetrics();
+    res.setHeader("Content-Type", "text/plain; version=0.0.4; charset=utf-8");
+    res.send(metrics);
+  } catch (error: any) {
+    res.status(500).send("# Error collecting metrics\n");
+  }
 });
 
 // Static file serving for uploads

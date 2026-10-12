@@ -9,7 +9,8 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "build": "tsc -p tsconfig.json --noEmit && vite build",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@types/multer": "^2.3.0",
@@ -48,6 +49,7 @@
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vite": "^7.3.2",
+    "vitest": "^5.0.3",
     "zod": "^4.6.5"
   }
 }

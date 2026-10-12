@@ -38,6 +38,7 @@ import { SocietyGates, SocietyHelpers, SocietyNoticesAdmin, SocietyOverview, Soc
 import { SuperOverview, SuperPlans, SuperSocieties, SuperTickets } from "@/pages/super/SuperAdminPages";
 import { useAuth } from "@/stores/use-auth";
 import { useData } from "@/stores/use-data";
+import { joinSocketRooms, getSocket } from "@/lib/socket-client";
 import type { Role } from "@/types";
 
 const icon = { size: 18 };
@@ -47,6 +48,7 @@ const icon = { size: 18 };
  * A resident cannot open /super, and a super admin cannot open the gate desk.
  */
 export function App() {
+  const user = useAuth((state) => state.user);
   const hydrate = useData((state) => state.hydrate);
   const ready = useData((state) => state.ready);
   const error = useData((state) => state.error);
@@ -54,6 +56,13 @@ export function App() {
   useEffect(() => {
     void hydrate();
   }, [hydrate]);
+
+  useEffect(() => {
+    getSocket();
+    if (user) {
+      joinSocketRooms(user);
+    }
+  }, [user]);
 
   if (!ready) {
     return <div className="grid min-h-screen place-items-center text-sm font-bold text-muted">Loading AI Smartgate Estate OS…</div>;
