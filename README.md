@@ -1,63 +1,160 @@
-# Gagellan Society OS
+# 🏢 AI Smartgate Estate OS (Gagellan Enterprise)
 
-One website for the company **Gagellan**, the societies that buy the product, the residents, and the gate staff.
+> **Next-Generation Society & Gated Community Operating System**  
+> Integrated with Node.js Express, PostgreSQL 17, Prisma ORM, Socket.io Real-Time Comms, Argon2 Authentication, and Razorpay Payments.
 
-Data is saved in this browser (localStorage). Nothing here talks to the old database.
+---
 
-## Open the website
+## 🚀 Architecture Overview
 
-```bash
-npm install
-npm run dev
+```
+┌──────────────────────────────────────────────────────────┐
+│              React 19 + TypeScript + Vite                │
+│       Frontend (Tailwind CSS, Lucide, Socket.io Client)  │
+└────────────────────────────┬─────────────────────────────┘
+                             │ (Reverse Proxy / HTTP + WSS)
+                             ▼
+┌──────────────────────────────────────────────────────────┐
+│             Node.js Express + Socket.io API              │
+│       (Argon2 Auth, HttpOnly JWT, Twilio SMS, Razorpay)   │
+└────────────────────────────┬─────────────────────────────┘
+                             │ (Prisma 6.4 ORM)
+                             ▼
+┌──────────────────────────────────────────────────────────┐
+│               PostgreSQL 17 Database                     │
+│         19 Domain Models (Users, Gates, Visitors, etc.)   │
+└──────────────────────────────────────────────────────────┘
 ```
 
-Then open **http://localhost:3100**
+---
 
-## Sign in as Gagellan
+## 🛠️ Quick Start
 
-This is the company view: who bought a plan, how much they pay, and which product-support tickets are open. It does not show resident names or gate logs.
+### 1. Prerequisites
+- **Node.js** v20+ or v24+
+- **PostgreSQL 17** running locally on port `5432` with a database named `smartgate`
 
-1. Go to http://localhost:3100/login
-2. Choose **Gagellan company**, or type:
-   - Email: `gagellan@gagellan.io`
-   - Password: `gagellan123`
-3. You land on **How the business is running**.
+### 2. Environment Configuration
+Ensure `.env` exists in the project root:
+```env
+DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/smartgate?connection_limit=25&pool_timeout=20"
+PORT=8080
+JWT_SECRET="ai-smartgate-jwt-secret-key-2026"
+NODE_ENV="development"
 
-Use the left menu (or the bottom menu on a phone):
+# Razorpay Configuration
+RAZORPAY_KEY_ID="rzp_test_SsI9IqT5Be0Iqp"
+RAZORPAY_KEY_SECRET="KtnF0aMqZQ4dGndnAlrrC2fT"
+VITE_RAZORPAY_KEY_ID="rzp_test_SsI9IqT5Be0Iqp"
 
-- **Overview** — revenue, paying societies, trials, open tickets, and the buyer table
-- **Societies** — every customer, their plan, and their join code. Add or edit a society here
-- **Plans** — change a monthly price
-- **Help desk** — product support from society admins (not complaints inside a society)
+# SMTP / Email OTP Configuration
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="465"
+SMTP_USER="saiprithvi0705@gmail.com"
+SMTP_PASS="brytuohojhsfblwt"
+SMTP_FROM="\"AI Smartgate Estate OS\" <saiprithvi0705@gmail.com>"
+```
 
-## Other demo logins
+### 3. Database Migration & Push
+```bash
+npm run db:push
+```
 
-| Who | Email | Password | What you should see |
-|---|---|---|---|
-| Society admin | karthik@silverwood.in | admin123 | Silverwood only: residents, gates, reports, plan, support |
-| Resident | ananya@silverwood.in | resident123 | Home, visitors, parcels, flat A-101, notices |
-| Gatekeeper | suresh@silverwood.in | guard123 | Large gate desk: visitors, parcels, staff check-in |
+### 4. Running the Development Stack
 
-Aura Towers is a second customer (`priya@auratowers.in` / `admin123`) so you can confirm Silverwood cannot see Aura.
+**Frontend (Vite UI):**
+```bash
+npm run dev
+# Running on http://localhost:3100
+```
 
-## Check it yourself
+**Backend (Express API + WebSockets):**
+```bash
+npm run server
+# Running on http://localhost:8080
+```
 
-1. **Website.** Open http://localhost:3100. Read the plans. You are not signed in yet.
-2. **Buy a society.** Open **Plans**, fill the form, and press **Pay and activate**. Note the admin email, password, and join code. Sign in with those. Then sign in as Gagellan and confirm the new row is in the buyer table as paid.
-3. **Trial.** Buy again with **Start a free trial instead**. Gagellan’s overview should show it as a trial with no revenue.
-4. **Company dashboard.** As Gagellan, confirm Silverwood is paid (₹5,999) and Aura is a trial. Open a help-desk ticket and set it to resolved.
-5. **Society admin.** Sign in as Karthik. Invite a resident, then press **Activate**. Open **Gates** and turn on auto-approve for deliveries. Open **Plan** and copy the join code `SW-2026`. Open **Support** and send a ticket. Sign back in as Gagellan and see that ticket.
-6. **Resident.** Sign in as Ananya. Approve or reject a visitor. Pre-approve a guest. On **Parcels**, press **Leave at gate**. Open **Notices** and **Profile**.
-7. **Join.** Sign out. Open **Join a society**, use code `SW-2026`, and create a new resident. Sign in with that email.
-8. **Gate.** Sign in as Suresh. Search “Ananya”. Send a visitor request. Open **parcel**, log a package, and hand it over with the code. Open **staff** and check someone in.
-9. **Wrong role.** While signed in as Ananya, go to http://localhost:3100/super. You should be sent back to the resident home.
-10. **Reset.** On the sign-in page, press **Reset demo data** if you want the original Silverwood and Aura records back.
+> **Note on `EADDRINUSE: 8080`**:  
+> If port `8080` is already in use by a background process, run this in PowerShell to free it before launching manually:
+> ```powershell
+> Stop-Process -Id (Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue).OwningProcess -Force
+> ```
 
-## What was kept from the old product
+---
 
-The old repo was several apps plus a database. Those apps are gone. These behaviours now live in this one site:
+## 🔐 Default Seed Credentials
 
-- A public page where a society buys a plan
-- A Gagellan dashboard of buyers, revenue, and support tickets
-- Society admin, resident app, and gate desk
-- Each society’s data stays on that society (`societyId`)
+All passwords are encrypted with high-security **Argon2id** hashes.
+
+| Role | Email | Password | Access Scope |
+| :--- | :--- | :--- | :--- |
+| **Super Admin** (Gagellan) | `saiprithvi0705@gmail.com` | `SuperAdmin@2026` | Global metrics, customer societies, plans, tickets |
+| **Society Admin** | `saiggs62@gmail.com` | `SocietyAdmin@2026` | Silverwood Heights management, residents, gates |
+| **Resident** | `saiggs055@gmail.com` | `Resident@2026` | Flat A-101: Visitor approvals, parcels, notices |
+| **Gatekeeper** | `saiggs739@gmail.com` | `GateGuard@2026` | North Gate desk: Visitor check-in, parcel drop |
+
+---
+
+## 📡 API Endpoints
+
+### 🔐 Authentication & Session
+- `POST /api/auth/login` — Sign in and receive HttpOnly JWT cookie (`smartgate_token`)
+- `POST /api/auth/demo-login` — Instant role switch for testing
+- `POST /api/auth/register-resident` — Onboarding with unit selection & pending admin approval
+- `GET /api/auth/me` — Verify session and fetch authenticated user profile
+- `POST /api/auth/logout` — Clear session cookies
+
+### 📲 OTP & Telephony
+- `POST /api/otp/send` — Dispatches 6-digit OTP via Twilio SMS or Gmail SMTP
+- `POST /api/otp/verify` — Validates OTP within 5-minute expiry window
+
+### 💳 Payments & Razorpay
+- `POST /api/payments/create-order` — Generates server-side order with receipt
+- `POST /api/payments/verify` — Validates client payment with HMAC-SHA256
+- `POST /api/payments/webhook` — Real-time webhook handler for `payment.captured` & `order.paid`
+
+### 📸 Photos & Media
+- `POST /api/upload/photo` — Multer disk storage for visitor/guard badges (max 10MB)
+- `GET /uploads/photos/:filename` — Static photo file delivery
+
+### 📊 Real-Time & Monitoring
+- `GET /api/metrics` — Prometheus metrics (uptime, DB status, sockets, HTTP durations)
+- `GET /api/data/snapshot` — Complete synchronized snapshot of society data
+- `POST /api/data/sync` — Bulk state sync
+
+---
+
+## 🧪 Automated Testing
+
+Execute the Vitest test suite:
+```bash
+npm test
+```
+Tests cover:
+- Argon2 password hashing & verification
+- JWT session generation & decoding
+- Twilio / OTP generation and expiry validation
+- Razorpay HMAC-SHA256 signature calculation & fraud prevention
+- Webhook HMAC-SHA256 payload verification
+
+---
+
+## 🚢 Production Deployment
+
+### Option A: Docker Compose
+Run the entire production stack (PostgreSQL + Express + Nginx Client):
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+### Option B: Vercel (Frontend)
+1. Import the repository on [Vercel](https://vercel.com/new).
+2. Set Environment Variable:
+   - `VITE_API_URL` = Your backend domain (e.g. `https://api.yourdomain.com`)
+   - `VITE_RAZORPAY_KEY_ID` = `rzp_test_SsI9IqT5Be0Iqp`
+3. Vercel automatically respects `vercel.json` rewrites for SPA routing.
+
+---
+
+## 📦 Git Repository
+- GitHub Repository: [https://github.com/ASP0705DEV/Society-Management-EPR](https://github.com/ASP0705DEV/Society-Management-EPR)

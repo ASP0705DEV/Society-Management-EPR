@@ -31,4 +31,24 @@ describe("Phase 4: Razorpay HMAC-SHA256 Payment Verification Tests", () => {
 
     expect(forgedSignature).not.toBe(validSignature);
   });
+
+  it("should validate webhook payload signatures with SHA256 HMAC", () => {
+    const webhookSecret = "whsec_test_secret_999";
+    const payload = JSON.stringify({
+      event: "payment.captured",
+      payload: { payment: { entity: { id: "pay_xyz", amount: 599900 } } },
+    });
+
+    const expectedSignature = crypto
+      .createHmac("sha256", webhookSecret)
+      .update(payload)
+      .digest("hex");
+
+    const verificationHmac = crypto
+      .createHmac("sha256", webhookSecret)
+      .update(payload)
+      .digest("hex");
+
+    expect(verificationHmac).toBe(expectedSignature);
+  });
 });

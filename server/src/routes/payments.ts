@@ -151,3 +151,77 @@ paymentsRouter.post("/verify", async (req: AuthenticatedRequest, res) => {
     });
   }
 });
+
+// -------------------------------------------------------------
+// POST /api/payments/webhook (Razorpay Webhook Event Processing)
+// -------------------------------------------------------------
+paymentsRouter.post("/webhook", async (req, res) => {
+  try {
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || keySecret;
+    const signature = req.headers["x-razorpay-signature"] as string;
+
+    if (!signature) {
+      res.status(400).json({ error: "Missing x-razorpay-signature header." });
+      return;
+    }
+
+    const payload = JSON.stringify(req.body);
+    const expectedSignature = crypto
+      .createHmac("sha256", webhookSecret)
+      .update(payload)
+      .digest("hex");
+
+    if (expectedSignature !== signature) {
+      console.warn("Razorpay webhook signature verification failed.");
+      res.status(400).json({ error: "Invalid webhook signature." });
+      return;
+    }
+
+    const event = req.body?.event;
+    console.log(`[Razorpay Webhook] Received verified event: ${event}`);
+
+    if (event === "payment.captured" || event === "order.paid") {
+      const paymentEntity = req.body.payload?.payment?.entity;
+      if (paymentEntity) {
+        const notes = paymentEntity.notes || {};
+        const amount = (paymentEntity.amount || 0) / 100;
+        const societyId = notes.societyId || "soc-silverwood";
+        const planId = notes.planId || "plan-professional";
+
+        await prisma.purchase.create({
+          data: {
+            societyId,
+            planId,
+            amount: amount || 5999,
+            status: "paid",
+            buyerName: notes.buyerName || "Estate Manager",
+            buyerEmail: paymentEntity.email || notes.buyerEmail || "",
+            paymentId: paymentEntity.id,
+          },
+        });
+
+        await prisma.subscription.upsert({
+          where: { id: `sub-${societyId}` },
+          create: {
+            id: `sub-${societyId}`,
+            societyId,
+            planId,
+            status: "active",
+            renewsOn: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          },
+          update: {
+            status: "active",
+            planId,
+            renewsOn: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          },
+        });
+      }
+    }
+
+    res.json({ status: "ok" });
+  } catch (error: any) {
+    console.error("Razorpay webhook processing error:", error);
+    res.status(500).json({ error: error.message || "Webhook processing failed." });
+  }
+});
+

@@ -40,7 +40,7 @@ dataRouter.get("/snapshot", async (req: AuthenticatedRequest, res) => {
       notifications,
       societyNotes,
       workOrders,
-    ] = await Promise.all([
+    ] = await prisma.$transaction([
       prisma.user.findMany({ orderBy: { createdAt: "asc" } }),
       prisma.society.findMany({ orderBy: { createdAt: "asc" } }),
       prisma.plan.findMany(),
