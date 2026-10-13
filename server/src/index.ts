@@ -156,6 +156,7 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 // Mount modular routers
 app.use("/api/auth", authRouter);
 app.use("/api/data", dataRouter);
+app.use("/api", dataRouter);
 app.use("/api/otp", otpRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/payments", paymentsRouter);

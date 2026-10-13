@@ -69,3 +69,23 @@ export function notifyNoticePublished(societyId: string, notice: Notice): void {
   if (!io) return;
   io.to(`society:${societyId}`).emit("notice:published", notice);
 }
+
+export function notifyVisitorExit(societyId: string, unitId: string, visitor: Visitor): void {
+  if (!io) return;
+  io.to(`unit:${unitId}`).emit("visitor:exited", visitor);
+  io.to(`gates:${societyId}`).emit("visitor:exited", visitor);
+  io.to(`society:${societyId}`).emit("feed:visitor-exit", visitor);
+}
+
+export function notifyStaffExit(societyId: string, staffName: string, unitIds?: string[]): void {
+  if (!io) return;
+  const payload = { name: staffName, timestamp: new Date().toISOString() };
+  if (unitIds && unitIds.length > 0) {
+    for (const uid of unitIds) {
+      io.to(`unit:${uid}`).emit("staff:exited", payload);
+    }
+  }
+  io.to(`gates:${societyId}`).emit("staff:exited", payload);
+  io.to(`society:${societyId}`).emit("feed:staff-exit", payload);
+}
+

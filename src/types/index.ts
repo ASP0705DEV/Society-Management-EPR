@@ -145,7 +145,7 @@ export interface Unit {
 }
 
 export type VisitorPurpose = "guest" | "delivery" | "cab" | "staff";
-export type VisitorStatus = "pending" | "approved" | "rejected" | "checked_in";
+export type VisitorStatus = "pending" | "approved" | "rejected" | "checked_in" | "exited";
 
 export interface Visitor {
   id: string;
@@ -226,6 +226,8 @@ export interface StaffCheckIn {
   duty: string;
   photo: string | null;
   checkedInAt: string;
+  checkedOutAt?: string | null;
+  helperId?: string | null;
 }
 
 export interface WorkOrder {

@@ -223,7 +223,7 @@ Smart Society Operating System
     success: true,
     message: dispatched ? `OTP successfully sent to ${cleanEmail}` : `OTP dispatched to ${cleanEmail}`,
     cooldownSeconds: 60,
-    devOtp: process.env.NODE_ENV !== "production" ? rawOtp : undefined,
+    devOtp: undefined,
   };
 }
 

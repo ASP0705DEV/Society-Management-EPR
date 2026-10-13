@@ -33,8 +33,6 @@ export function OtpVerificationModal({
   const [mobileVerified, setMobileVerified] = useState(false);
   const [mobileCooldown, setMobileCooldown] = useState(0);
   const [mobileLoading, setMobileLoading] = useState(false);
-
-  const [devOtpCode, setDevOtpCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const cleanEmail = email.trim();
@@ -77,9 +75,6 @@ export function OtpVerificationModal({
     try {
       const res = await otpClient.sendEmailOtp(cleanEmail, purpose);
       setEmailCooldown(res.cooldownSeconds || 60);
-      if (res.devOtp) {
-        setDevOtpCode(res.devOtp);
-      }
       toast.info(`Verification code sent to ${cleanEmail}`, "Email OTP Dispatched");
     } catch (err: any) {
       setError(err.message || "Failed to dispatch email verification code.");
@@ -190,19 +185,6 @@ export function OtpVerificationModal({
                 </p>
                 <p className="text-sm font-black text-slate-800 dark:text-white mt-0.5">{cleanEmail}</p>
               </div>
-
-              {devOtpCode && (
-                <div className="rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 p-2.5 text-xs text-blue-900 dark:text-blue-200 flex items-center justify-between">
-                  <span>Code Sent to Inbox: <strong className="font-mono text-sm tracking-widest text-primary">{devOtpCode}</strong></span>
-                  <button
-                    type="button"
-                    onClick={() => setEmailOtp(devOtpCode)}
-                    className="text-[11px] font-bold underline cursor-pointer text-blue-600 hover:text-blue-800"
-                  >
-                    Auto-fill
-                  </button>
-                </div>
-              )}
 
               <div>
                 <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1.5">

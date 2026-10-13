@@ -155,7 +155,8 @@ interface DataState {
   addParcel: (input: { societyId: string; unitId: string; residentUserId: string; carrier: string; description: string }) => string;
   setParcelStatus: (parcelId: string, status: Parcel["status"], actor: SessionUser) => string | null;
   collectParcel: (parcelId: string, otp: string) => string | null;
-  checkInStaff: (input: { societyId: string; gateId: string; name: string; duty: string; photo: string | null }) => void;
+  checkInStaff: (input: { societyId: string; gateId: string; name: string; duty: string; photo: string | null; helperId?: string | null }) => void;
+  checkOutStaff: (id: string, helperId?: string | null) => void;
   addNotice: (input: { societyId: string; title: string; body: string; priority?: "urgent" | "normal" | "info"; category?: string }) => void;
   deleteNotice: (noticeId: string) => void;
   toggleHelperAllowed: (helperId: string) => void;
@@ -680,12 +681,18 @@ export const useData = create<DataState>((set, get) => {
             : person,
         ),
       }));
+      fetch(`/api/residents/${userId}/activate`, { method: "PUT" }).catch((e) =>
+        console.warn("Direct resident activation failed:", e)
+      );
     },
     rejectResident: (userId) => {
       commit((db) => ({
         ...db,
         users: db.users.filter((person) => person.id !== userId),
       }));
+      fetch(`/api/residents/${userId}/reject`, { method: "DELETE" }).catch((e) =>
+        console.warn("Direct resident reject failed:", e)
+      );
     },
     updateGate: (gateId, patch) => {
       commit((db) => ({
@@ -719,15 +726,39 @@ export const useData = create<DataState>((set, get) => {
       return newVisitor;
     },
     setVisitorStatus: (visitorId, status, actor) => {
-      commit((db) => ({
-        ...db,
-        visitors: db.visitors.map((visitor) => {
-          if (visitor.id !== visitorId) return visitor;
-          if (actor.role === "resident" && visitor.hostUserId !== actor.id) return visitor;
-          if (actor.role !== "super_admin" && visitor.societyId !== actor.societyId) return visitor;
-          return { ...visitor, status };
-        }),
-      }));
+      commit((db) => {
+        const targetVisitor = db.visitors.find((v) => v.id === visitorId);
+        let updatedNotifs = db.notifications;
+        if (status === "exited" && targetVisitor) {
+          const exitNotif: AppNotification = {
+            id: newId("notif"),
+            societyId: targetVisitor.societyId,
+            userId: targetVisitor.hostUserId,
+            title: `🚪 Visitor Exited: ${targetVisitor.name}`,
+            message: `${targetVisitor.name} (${targetVisitor.purpose}) has checked out and exited through the gate at ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`,
+            type: "gate",
+            read: false,
+            createdAt: new Date().toISOString(),
+          };
+          updatedNotifs = [exitNotif, ...(db.notifications ?? [])];
+        }
+
+        return {
+          ...db,
+          notifications: updatedNotifs,
+          visitors: db.visitors.map((visitor) => {
+            if (visitor.id !== visitorId) return visitor;
+            if (actor.role === "resident" && visitor.hostUserId !== actor.id) return visitor;
+            if (actor.role !== "super_admin" && visitor.societyId !== actor.societyId) return visitor;
+            return { ...visitor, status };
+          }),
+        };
+      });
+      fetch(`/api/visitors/${visitorId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      }).catch((e) => console.warn("Visitor status API call failed:", e));
     },
     addParcel: (input) => {
       const otp = pinCode();
@@ -785,10 +816,32 @@ export const useData = create<DataState>((set, get) => {
             duty: input.duty.trim(),
             photo: input.photo,
             checkedInAt: new Date().toISOString(),
+            checkedOutAt: null,
+            helperId: input.helperId ?? null,
           },
           ...db.staffCheckIns,
         ],
       }));
+    },
+    checkOutStaff: (id, helperId) => {
+      const staffItem = get().db.staffCheckIns.find((item) => item.id === id);
+      const name = staffItem?.name || "Staff Member";
+      const societyId = staffItem?.societyId || "";
+      const now = new Date().toISOString();
+
+      commit((db) => ({
+        ...db,
+        staffCheckIns: db.staffCheckIns.map((item) =>
+          item.id === id ? { ...item, checkedOutAt: now } : item,
+        ),
+      }));
+
+      // Call backend staff exit endpoint to persist and notify residents
+      fetch("/api/staff/exit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ societyId, name, helperId: helperId || staffItem?.helperId }),
+      }).catch((e) => console.warn("Staff exit API failed:", e));
     },
     addNotice: (input) => {
       commit((db) => ({

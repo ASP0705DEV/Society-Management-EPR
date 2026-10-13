@@ -134,17 +134,29 @@ authRouter.post("/demo-login", async (req, res) => {
 // -------------------------------------------------------------
 authRouter.post("/register-resident", async (req, res) => {
   try {
-    const { code, name, email, phone, password, block, number } = req.body;
+    const { name, email, phone, password, block, number } = req.body;
+    const code = req.body.code || req.body.societyCode;
 
     if (!code || !name || !email || !password || !block || !number) {
       res.status(400).json({ error: "All required registration fields must be provided." });
       return;
     }
 
-    const cleanCode = String(code).trim().toUpperCase().replace(/[\s-]/g, "");
+    const rawCode = String(code).trim();
+    const cleanCode = rawCode.toUpperCase().replace(/[\s-]/g, "");
+    const withHyphen = rawCode.includes("-")
+      ? rawCode
+      : rawCode.length > 2
+      ? `${rawCode.slice(0, 2)}-${rawCode.slice(2)}`
+      : rawCode;
+
     const society = await prisma.society.findFirst({
       where: {
-        code: { equals: cleanCode, mode: "insensitive" },
+        OR: [
+          { code: { equals: rawCode, mode: "insensitive" } },
+          { code: { equals: cleanCode, mode: "insensitive" } },
+          { code: { equals: withHyphen, mode: "insensitive" } },
+        ],
       },
     });
 

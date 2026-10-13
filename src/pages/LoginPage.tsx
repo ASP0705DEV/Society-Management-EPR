@@ -501,26 +501,50 @@ export function LoginPage({ initialMode: propMode }: LoginPageProps) {
   // ------------------------------------------
   // Finalize Registration After Successful Email OTP
   // ------------------------------------------
-  function handleJoinOtpComplete() {
+  async function handleJoinOtpComplete() {
     setShowJoinOtpModal(false);
-    const message = joinResident({
-      code: joinCode.trim(),
-      name: joinName.trim(),
-      email: signUpEmail.trim(),
-      phone: joinPhone.trim(),
-      password: joinPassword,
-      block: joinBlock.trim() || "A",
-      number: joinNumber.trim() || "101",
-    });
 
-    if (message) {
-      setSignUpError(message);
-      toast.error(message, "Registration Error");
-      return;
+    try {
+      const res = await fetch("/api/auth/register-resident", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: joinCode.trim(),
+          name: joinName.trim(),
+          email: signUpEmail.trim().toLowerCase(),
+          phone: joinPhone.trim(),
+          password: joinPassword,
+          block: joinBlock.trim() || "A",
+          number: joinNumber.trim() || "101",
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setSignUpError(data.error || "Registration failed.");
+        toast.error(data.error || "Registration error.", "Registration Failed");
+        return;
+      }
+
+      // Keep local state in sync
+      joinResident({
+        code: joinCode.trim(),
+        name: joinName.trim(),
+        email: signUpEmail.trim(),
+        phone: joinPhone.trim(),
+        password: joinPassword,
+        block: joinBlock.trim() || "A",
+        number: joinNumber.trim() || "101",
+      });
+
+      // Hydrate state from PostgreSQL so society admin immediately sees the new resident
+      await useData.getState().hydrate();
+
+      setSignUpStep("success");
+      toast.success("Registration submitted! Pending society admin approval.", "Registration Received");
+    } catch (err: any) {
+      setSignUpError(err.message || "Failed to submit registration.");
     }
-
-    setSignUpStep("success");
-    toast.success("Registration submitted! Pending society admin approval.", "Registration Received");
   }
 
   // ------------------------------------------
