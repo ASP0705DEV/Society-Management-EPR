@@ -56,6 +56,76 @@ if (process.env.NODE_ENV !== "test") {
 
 import { metricsMiddleware, getPrometheusMetrics } from "./lib/metrics";
 
+// CSP header middleware allowing connect-src for sockets, APIs, and devtools
+app.use((_req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self' 'unsafe-inline' 'unsafe-eval' http: https: ws: wss: data: blob:; connect-src 'self' http://localhost:* ws://localhost:* wss://localhost:* http://127.0.0.1:* ws://127.0.0.1:* https:;"
+  );
+  next();
+});
+
+// Chrome DevTools probe endpoint to prevent 404 and CSP errors
+app.get("/.well-known/appspecific/com.chrome.devtools.json", (_req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.status(200).json({});
+});
+
+// Empty favicon handler to avoid 404
+app.get("/favicon.ico", (_req, res) => {
+  res.status(204).end();
+});
+
+// Root landing page for port 8080
+app.get("/", (req, res) => {
+  if (req.accepts("html")) {
+    res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Smartgate Estate OS API</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #090d16; color: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+    .card { background: #131b2e; border: 1px solid #1e293b; border-radius: 12px; padding: 36px; max-width: 480px; text-align: center; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
+    .badge { display: inline-block; background: rgba(99,102,241,0.2); border: 1px solid #4f46e5; color: #a5b4fc; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
+    h1 { font-size: 22px; margin: 0 0 10px 0; color: #ffffff; }
+    p { color: #94a3b8; font-size: 14px; line-height: 1.5; margin: 0 0 24px 0; }
+    .btn { display: inline-block; background: #4f46e5; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; }
+    .btn:hover { background: #4338ca; }
+    .links { margin-top: 20px; font-size: 12px; color: #64748b; }
+    .links a { color: #818cf8; text-decoration: none; margin: 0 8px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">Backend API Active • Port 8080</div>
+    <h1>AI Smartgate Estate OS API</h1>
+    <p>Backend Express service and Socket.io engine are active on port 8080.<br/>Click below to launch the web application.</p>
+    <a href="http://localhost:3100" class="btn">Open Web Application (:3100) &rarr;</a>
+    <div class="links">
+      <a href="/api/health">/api/health</a> • 
+      <a href="/api/metrics">/api/metrics</a> • 
+      <a href="/api/data/snapshot">/api/data/snapshot</a>
+    </div>
+  </div>
+</body>
+</html>`);
+  } else {
+    res.json({
+      service: "AI Smartgate Estate OS Backend API",
+      status: "online",
+      port: 8080,
+      frontendUrl: "http://localhost:3100",
+      endpoints: {
+        health: "/api/health",
+        metrics: "/api/metrics",
+        snapshot: "/api/data/snapshot",
+      },
+    });
+  }
+});
+
 // Request & performance metrics collection
 app.use(metricsMiddleware);
 
