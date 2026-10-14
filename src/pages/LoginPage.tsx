@@ -193,7 +193,8 @@ export function LoginPage({ initialMode: propMode }: LoginPageProps) {
 
   const DEV_USERS = [
     { name: "Sai Prithvi", role: "Super Admin", email: "saiprithvi0705@gmail.com", pass: "SuperAdmin@2026", badge: "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300" },
-    { name: "Kritik Rao", role: "Society Admin", email: "saiggs62@gmail.com", pass: "SocietyAdmin@2026", badge: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300" },
+    { name: "Kritik Rao", role: "Society Admin (Silverwood)", email: "saiggs62@gmail.com", pass: "SocietyAdmin@2026", badge: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300" },
+    { name: "Silver Oak Admin", role: "Society Admin (Silver Oak)", email: "silveroak.admin@gmail.com", pass: "SocietyAdmin@2026", badge: "bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300" },
     { name: "Prithvi A", role: "Resident (A-101)", email: "saiggs055@gmail.com", pass: "Resident@2026", badge: "bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300" },
     { name: "Rahul M", role: "Gate Guard", email: "saiggs739@gmail.com", pass: "GateGuard@2026", badge: "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300" },
   ];
